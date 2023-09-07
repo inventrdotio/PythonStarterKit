@@ -1,42 +1,26 @@
 import machine
-import utime
-import urandom
+import time
 
-# Initialize GPIO pins for LED and Button
-led = machine.Pin(14, machine.Pin.OUT)
-button = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
+# Define GPIO pins for the LED and button
+led_pin = machine.Pin(14, machine.Pin.OUT)
+button_pin = machine.Pin(15, machine.Pin.IN, machine.Pin.PULL_UP)
 
-# Function to get a random delay time
-def get_random_delay():
-    return urandom.randint(3, 7)
+# Function to measure reaction time
+def reaction_time_tester():
+    time.sleep(5)
+    led_pin.on()  # Turn on the LED
+    start_time = time.ticks_ms()  # Get start time in milliseconds
 
-# Main Loop
-while True:
-    led.value(0)  # Turn LED off initially
-    
-    # Wait for a random amount of time
-    utime.sleep(get_random_delay())
-    
-    # Turn on the LED
-    led.value(1)
-    
-    # Record the time the LED turned on
-    start_time = utime.ticks_ms()
-    
     # Wait for button press
-    while button.value() == 1:
-        pass
-    
-    # Record the time the button was pressed
-    end_time = utime.ticks_ms()
-    
-    # Turn off the LED
-    led.value(0)
-    
-    # Calculate reaction time
-    reaction_time = utime.ticks_diff(end_time, start_time)
-    
-    print("Your reaction time is:", reaction_time, "ms")
-    
-    # Wait before the next iteration
-    utime.sleep(2)
+    while True:
+        if button_pin.value() == 1:
+            end_time = time.ticks_ms()  # Get end time in milliseconds
+            reaction_time = end_time - start_time  # Calculate reaction time
+            print('Reaction Time:', reaction_time, 'ms')
+            break
+
+    led_pin.off()  # Turn off the LED
+
+# Call the function to start the reaction time tester
+reaction_time_tester()
+
