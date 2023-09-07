@@ -1,27 +1,28 @@
 import machine
-import utime
+import time
 
-# Initialize GPIO pin for LED
-led = machine.Pin(14, machine.Pin.OUT)
+# Define LED Pin
+LED_PIN = 17
+led = machine.Pin(LED_PIN, machine.Pin.OUT)
 
-# Initialize ADC for photoresistor
-adc = machine.ADC(26)
+# Define ADC Pin for LDR
+ADC_PIN = 26
+adc = machine.ADC(machine.Pin(ADC_PIN))
 
-# Threshold for ambient light level to turn on LED
-LIGHT_THRESHOLD = 2000
+# Define a threshold for the LDR reading below which the LED should turn ON
+LIGHT_THRESHOLD = 50000  # This might need adjustment based on your LDR and environment
 
-# Function to read ambient light level
-def read_light_level():
-    return adc.read_u16()
-
-# Main Loop
-while True:
-    light_level = read_light_level()
-    
-    # Turn on LED if light level is below threshold
-    if light_level < LIGHT_THRESHOLD:
-        led.value(1)
-    else:
-        led.value(0)
+def night_light():
+    while True:
+        light_value = adc.read_u16()
+        print(light_value)
+        # If the reading is below the threshold, turn the LED on. Otherwise, turn it off.
+        if light_value < LIGHT_THRESHOLD:
+            led.value(1)
+        else:
+            led.value(0)
         
-    utime.sleep_ms(500)  # Wait for 500 milliseconds before next reading
+        time.sleep(0.5)  # Check every half second
+
+night_light()
+
