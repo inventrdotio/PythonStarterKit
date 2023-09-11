@@ -1,5 +1,5 @@
 import machine
-import utime
+import time
 
 # Initialize button on GPIO 15
 button = machine.Pin(1, machine.Pin.IN, machine.Pin.PULL_UP)
@@ -19,7 +19,8 @@ def set_next_brightness():
 
 # Main Loop
 while True:
-    if button.value() == 0:  # Button pressed
+    if button.value() == 1:  # Button pressed
         set_next_brightness()
-        utime.sleep_ms(200)  # Debounce button
-    utime.sleep_ms(10)
+        time.sleep(0.2)  # Debounce button
+    time.sleep(0.01)
+
