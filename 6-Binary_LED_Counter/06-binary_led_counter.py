@@ -21,6 +21,13 @@ def update_led_states():
         else:
             led.off()
 
+# Function to create a padded binary string
+def padded_binary_string(value, length):
+    binary_str = bin(value).replace("0b", "")
+    while len(binary_str) < length:
+        binary_str = '0' + binary_str
+    return binary_str
+
 # Function to increment binary counter
 def increment_counter():
     # Convert LED states to integer
@@ -29,8 +36,7 @@ def increment_counter():
     # If value is 16 (10000 in binary), reset to 0
     if binary_value >= 16:
         binary_value = 0
-    binary_string = bin(binary_value)[2:]  # Convert decimal to binary string
-    binary_string = binary_string.zfill(len(led_pins))  # Pad with zeros if necessary
+    binary_string = padded_binary_string(binary_value, len(led_pins))
 
     # Update LED states
     for i, bit in enumerate(binary_string):
@@ -38,7 +44,8 @@ def increment_counter():
 
 # Main loop
 while True:
-    if button_pin.value() == 0:
+    if button_pin.value() == 1:
         increment_counter()
         update_led_states()
         time.sleep(0.2)  # Button debounce delay
+
