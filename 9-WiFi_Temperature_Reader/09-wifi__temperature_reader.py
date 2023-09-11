@@ -1,41 +1,87 @@
-import machine
 import network
-import utime
-import urequests
+import socket
+from time import sleep
+from picozero import pico_temp_sensor, pico_led
+import machine
 
-# Your ThingSpeak API Key and channel
-API_KEY = "YOUR_THINGSPEAK_API_KEY"
-CHANNEL_ID = "YOUR_THINGSPEAK_CHANNEL_ID"
+ssid = 'NAME OF YOUR WIFI NETWORK'
+password = 'YOUR SECRET PASSWORD'
 
-# Connect to WiFi
-wlan = network.WLAN(network.STA_IF)
-wlan.active(True)
-wlan.connect("Your_WiFi_Name", "Your_WiFi_Password")
-while not wlan.isconnected():
-    utime.sleep(1)
 
-# Read temperature from internal sensor
-adc = machine.ADC(4)  # Pin for the built-in temperature sensor is 4
-conversion_factor = 3.3 / (65535)
-def read_temperature():
-    reading = adc.read_u16() * conversion_factor
-    temperature = 27 - (reading - 0.706)/0.001721
-    return temperature
+def connect():
+    #Connect to WLAN
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect(ssid, password)
+    while wlan.isconnected() == False:
+        print('Waiting for connection...')
+        sleep(1)        
+    ip = wlan.ifconfig()[0]
+    print(f'Connected on {ip}')
+    return ip
 
-# Main loop
-while True:
-    temperature = read_temperature()
-    print("Temperature:", temperature, "°C")
 
-    # Report the data to ThingSpeak (replace with your ThingSpeak channel and API key)
-    url = "http://api.thingspeak.com/update"
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {
-        "api_key": API_KEY,
-        "field1": temperature
-    }
-    response = urequests.post(url, headers=headers, data=data)
-    print(response.text)
+
+def open_socket(ip):
+    # Open a socket
+    address = (ip, 80)
+    connection = socket.socket()
+    connection.bind(address)
+    connection.listen(1)
+    return connection
+
+
+def webpage(temperature, state):
+    #Template HTML
+    html = f"""
+            <!DOCTYPE html>
+            <html>
+            <form action="./lighton">
+            <input type="submit" value="Light on" />
+            </form>
+            <form action="./lightoff">
+            <input type="submit" value="Light off" />
+            </form>
+            <p>LED is {state}</p>
+            <p>Temperature is {temperature}</p>
+            </body>
+            </html>
+            """
+    return str(html)
+
+
+def serve(connection):
+    #Start a web server
+    state = 'OFF'
+    pico_led.off()
+    temperature = 0
+    while True:
+        client = connection.accept()[0]
+        request = client.recv(1024)
+        request = str(request)
+        try:
+            request = request.split()[1]
+        except IndexError:
+            pass
+        if request == '/lighton?':
+            pico_led.on()
+            state = 'ON'
+        elif request =='/lightoff?':
+            pico_led.off()
+            state = 'OFF'
+        temperature = pico_temp_sensor.temp
+        html = webpage(temperature, state)
+        client.send(html)
+        client.close()
+
+
+try:
+    ip = connect()
+    connection = open_socket(ip)
+    serve(connection)
+except KeyboardInterrupt:
+    machine.reset()
     
-    # Wait for a bit before the next reading
-    utime.sleep(10)
+
+
+
